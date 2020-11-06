@@ -1,0 +1,13 @@
+__files_group(${CMAKE_CURRENT_SOURCE_DIR}/librevenge/ SRCS)
+__files_group(${CMAKE_CURRENT_SOURCE_DIR}/include/ INCSRCS)
+
+set(LIBS zlib)
+set(DEFS _CRT_SECURE_NO_WARNINGS)
+set(INCS ${CMAKE_CURRENT_SOURCE_DIR}/include/ 
+		 ${CMAKE_CURRENT_SOURCE_DIR}
+		 ${boost_INCLUDE_DIR})
+
+__add_real_target(librevenge lib SOURCE ${SRCS} ${INCSRCS} INC ${INCS} LIB ${LIBS} DEF ${DEFS})
+
+INSTALL(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION include/librevenge/ FILES_MATCHING PATTERN "*.h")
+set_property(TARGET librevenge PROPERTY INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/include/)
