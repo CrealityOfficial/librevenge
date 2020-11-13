@@ -1,6 +1,1 @@
-[submodule "cmake"]
-	path = cmake
-	url = git@gitee.com:zeng_gui/cmake.git
-[submodule "zlib"]
-	path = zlib
-	url = git@gitee.com:zeng_gui/zlib.git
+
