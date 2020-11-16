@@ -724,7 +724,9 @@ void libcdr::CDRParser::readRecord(unsigned fourCC, unsigned length, librevenge:
     readStlt(input, length);
     break;
   case CDR_FOURCC_txsm:
+  	#ifdef CRD_ANALYSIS_FONT
     readTxsm(input, length);
+	#endif
     break;
   case CDR_FOURCC_udta:
     readUdta(input);

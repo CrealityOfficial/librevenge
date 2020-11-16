@@ -60,6 +60,8 @@ public:
 	void drawPolyline(const RVNGPropertyList &propList);
 	void drawPolygon(const RVNGPropertyList &propList);
 	void drawPath(const RVNGPropertyList &propList);
+	void drawPath2Json(const RVNGPropertyList& propList);
+
 	void drawGraphicObject(const RVNGPropertyList &propList);
 	void drawConnector(const RVNGPropertyList &propList);
 	void startTextObject(const RVNGPropertyList &propList);

@@ -28,6 +28,8 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <iostream>
+#include <fstream>
 
 #include "librevenge_internal.h"
 
@@ -213,6 +215,8 @@ struct RVNGSVGDrawingGeneratorPrivate
 	//! a prefix used to define the svg namespace with delimiter
 	std::string m_nmSpaceAndDelim;
 	std::ostringstream m_outputSink;
+	std::ostringstream m_outputSinkJson;
+	int m_pathIndex;
 	RVNGStringVector &m_vec;
 	//! the actual master name
 	RVNGString m_masterName;
@@ -709,13 +713,43 @@ void RVNGSVGDrawingGenerator::startPage(const RVNGPropertyList &propList)
 	if (propList["svg:height"])
 		m_pImpl->m_outputSink << "height=\"" << doubleToString(72*getInchValue(*propList["svg:height"])) << "\"";
 	m_pImpl->m_outputSink << " >\n";
+
+	
+	m_pImpl->m_pathIndex = 0;
+	m_pImpl->m_outputSinkJson.clear();
+	m_pImpl->m_outputSinkJson << "{";
+
 }
 
 void RVNGSVGDrawingGenerator::endPage()
 {
 	m_pImpl->m_outputSink << "</" << m_pImpl->getNamespaceAndDelim() << "svg>\n";
-	m_pImpl->m_vec.append(m_pImpl->m_outputSink.str().c_str());
+	//m_pImpl->m_vec.append(m_pImpl->m_outputSink.str().c_str());
+	//m_pImpl->m_vec.append(m_pImpl->m_outputSinkJson.str().c_str());
 	m_pImpl->m_outputSink.str("");
+
+	{
+		m_pImpl->m_outputSinkJson <<",\n\"pathTotal\""<<":"<< m_pImpl->m_pathIndex;
+		m_pImpl->m_outputSinkJson << "\n}";
+		m_pImpl->m_vec.append(m_pImpl->m_outputSinkJson.str().c_str());
+
+		RVNGString tempstr = m_pImpl->m_outputSinkJson.str().c_str();
+		const char* json_content = tempstr.cstr();
+		const char* file_name = "out.json";
+		std::ofstream outfile;
+		outfile.open(file_name);
+		if (!outfile.is_open()) {
+			fprintf(stderr, "fail to open file to write: %s\n", file_name);
+			return;
+		}
+		outfile << json_content << std::endl;
+		outfile.close();
+		m_pImpl->m_outputSinkJson.clear();
+		m_pImpl->m_pathIndex = 0;
+
+	}
+
+
 }
 
 void RVNGSVGDrawingGenerator::startMasterPage(const RVNGPropertyList &propList)
@@ -904,8 +938,87 @@ void RVNGSVGDrawingGenerator::drawPath(const RVNGPropertyList &propList)
 	m_pImpl->m_outputSink << "\" \n";
 	m_pImpl->writeStyle(isClosed);
 	m_pImpl->m_outputSink << "/>\n";
-}
 
+	drawPath2Json(propList);
+}
+void RVNGSVGDrawingGenerator::drawPath2Json(const RVNGPropertyList& propList)
+{
+#if 1
+	const RVNGPropertyListVector* path = propList.child("svg:d");
+	if (!path)
+		return;
+	if (m_pImpl->m_pathIndex != 0)
+		m_pImpl->m_outputSinkJson << ",";
+	m_pImpl->m_outputSinkJson << "\n\"pathIndex"<< m_pImpl->m_pathIndex<<"\":{";
+	bool isClosed = false;
+	unsigned long i = 0;
+	
+	m_pImpl->m_outputSinkJson<<"\n\"LevelTotal\":"<<path->count()<<",";
+	for (i = 0; i < path->count(); i++)
+	{
+		RVNGPropertyList pList((*path)[i]);
+		if (!pList["librevenge:path-action"]) continue;
+		std::string action = pList["librevenge:path-action"]->getStr().cstr();
+		if (action.length() != 1) continue;
+		bool coordOk = pList["svg:x"] && pList["svg:y"];
+		bool coord1Ok = coordOk && pList["svg:x1"] && pList["svg:y1"];
+		bool coord2Ok = coord1Ok && pList["svg:x2"] && pList["svg:y2"];
+		if(i !=0)
+			m_pImpl->m_outputSinkJson <<",";
+		
+		m_pImpl->m_outputSinkJson<<"\n\"LevelIndex"<<i<<"\":{";
+		
+		if (pList["svg:x"] && action[0] == 'H')
+			m_pImpl->m_outputSinkJson << "\n\"H\":" << doubleToString(72 * getInchValue(*pList["svg:x"]));
+		else if (pList["svg:y"] && action[0] == 'V')
+			m_pImpl->m_outputSinkJson << "\n\"V\":" << doubleToString(72 * getInchValue(*pList["svg:y"]));
+		else if (coordOk && (action[0] == 'M' || action[0] == 'L' || action[0] == 'T'))
+		{
+			m_pImpl->m_outputSinkJson << "\n" <<"\""<<action<<"\":[ \n";
+			m_pImpl->m_outputSinkJson << doubleToString(72 * getInchValue(*pList["svg:x"])) << "," << doubleToString(72 * getInchValue(*pList["svg:y"]));
+			m_pImpl->m_outputSinkJson << "\n ]";
+		}
+		else if (coord1Ok && (action[0] == 'Q' || action[0] == 'S'))
+		{
+			m_pImpl->m_outputSinkJson << "\n" <<"\""<<action<<"\":[\n";
+			m_pImpl->m_outputSinkJson << doubleToString(72 * getInchValue(*pList["svg:x1"])) << "," << doubleToString(72 * getInchValue(*pList["svg:y1"])) << ",";
+			m_pImpl->m_outputSinkJson << doubleToString(72 * getInchValue(*pList["svg:x"])) << "," << doubleToString(72 * getInchValue(*pList["svg:y"]));
+			m_pImpl->m_outputSinkJson << "\n ]";
+		}
+		else if (coord2Ok && action[0] == 'C')
+		{
+		
+			m_pImpl->m_outputSinkJson << "\n" <<"\""<<action<<"\":[\n";
+			//m_pImpl->m_outputSinkJson << "\nC";
+			m_pImpl->m_outputSinkJson << doubleToString(72 * getInchValue(*pList["svg:x1"])) << "," << doubleToString(72 * getInchValue(*pList["svg:y1"])) << ",";
+			m_pImpl->m_outputSinkJson << doubleToString(72 * getInchValue(*pList["svg:x2"])) << "," << doubleToString(72 * getInchValue(*pList["svg:y2"])) << ",";
+			m_pImpl->m_outputSinkJson << doubleToString(72 * getInchValue(*pList["svg:x"])) << "," << doubleToString(72 * getInchValue(*pList["svg:y"]));
+			m_pImpl->m_outputSinkJson << "\n ]";
+		}
+		else if (coordOk && pList["svg:rx"] && pList["svg:ry"] && action[0] == 'A')
+		{
+			m_pImpl->m_outputSinkJson << "\n" <<"\""<<action<<"\":[\n";
+			//m_pImpl->m_outputSinkJson << "\nA";
+			m_pImpl->m_outputSinkJson << doubleToString(72 * getInchValue(*pList["svg:rx"])) << "," << doubleToString(72 * getInchValue(*pList["svg:ry"])) << ",";
+			m_pImpl->m_outputSinkJson << doubleToString(pList["librevenge:rotate"] ? pList["librevenge:rotate"]->getDouble() : 0) << ",";
+			m_pImpl->m_outputSinkJson << (pList["librevenge:large-arc"] ? pList["librevenge:large-arc"]->getInt() : 1) << ",";
+			m_pImpl->m_outputSinkJson << (pList["librevenge:sweep"] ? pList["librevenge:sweep"]->getInt() : 1) << ",";
+			m_pImpl->m_outputSinkJson << doubleToString(72 * getInchValue(*pList["svg:x"])) << "," << doubleToString(72 * getInchValue(*pList["svg:y"]));
+			m_pImpl->m_outputSinkJson << "\n ]";
+		}
+		else if (action[0] == 'Z')
+		{
+			isClosed = true;
+			m_pImpl->m_outputSinkJson << "\n" <<"\""<<action<<"\":"<<true;
+		}
+		
+		m_pImpl->m_outputSinkJson<<"\n}";
+		
+	}
+	m_pImpl->m_pathIndex += 1;
+	m_pImpl->m_outputSinkJson << "\n }";
+#endif
+}
 void RVNGSVGDrawingGenerator::drawGraphicObject(const RVNGPropertyList &propList)
 {
 	if (!propList["librevenge:mime-type"] || propList["librevenge:mime-type"]->getStr().len() <= 0)
