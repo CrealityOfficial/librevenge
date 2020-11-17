@@ -24,6 +24,7 @@
 #define DUMP_VECT 0
 #endif
 
+#define CDR_DOC_UPDOWN_FLIP_ENABLE
 namespace libcdr
 {
 namespace
@@ -244,7 +245,11 @@ void libcdr::CDRContentCollector::_flushCurrentPath()
       m_currentPath.transform(m_groupTransforms.top());
     CDRTransform tmpTrafo(1.0, 0.0, -m_page.offsetX, 0.0, 1.0, -m_page.offsetY);
     m_currentPath.transform(tmpTrafo);
+	#ifdef CDR_DOC_UPDOWN_FLIP_ENABLE
+    tmpTrafo = CDRTransform(1.0, 0.0, 0.0, 0.0, 1.0, m_page.height);
+	#else
     tmpTrafo = CDRTransform(1.0, 0.0, 0.0, 0.0, -1.0, m_page.height);
+	#endif
     m_currentPath.transform(tmpTrafo);
 
     std::vector<librevenge::RVNGPropertyList> tmpPath;
