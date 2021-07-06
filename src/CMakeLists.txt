@@ -1,3 +1,8 @@
+__assert_target(zlib)
+if(NOT BOOST_INCLUDE_DIRS)
+	message(FATAL_ERROR "Please Specify BOOST_INCLUDE_DIRS")
+endif()
+
 __files_group(${CMAKE_CURRENT_SOURCE_DIR}/librevenge/ SRCS)
 __files_group(${CMAKE_CURRENT_SOURCE_DIR}/libcdr/ CDRSRCS)
 __files_group(${CMAKE_CURRENT_SOURCE_DIR}/include/ INCSRCS)
@@ -12,7 +17,7 @@ endif()
 
 set(INCS ${CMAKE_CURRENT_SOURCE_DIR}/include/ 
 		 ${CMAKE_CURRENT_SOURCE_DIR}
-		 ${boost_INCLUDE_DIR})
+		 ${BOOST_INCLUDE_DIRS})
 
 __add_real_target(librevenge dll SOURCE ${SRCS} ${INCSRCS} ${CDRSRCS} INC ${INCS} LIB ${LIBS} DEF ${DEFS}
 			INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/)
