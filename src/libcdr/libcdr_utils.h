@@ -50,8 +50,10 @@ namespace libcdr
 {
 void debugPrint(const char *format, ...) CDR_ATTRIBUTE_PRINTF(1, 2);
 }
-#define CDR_DEBUG_MSG(M) libcdr::debugPrint M
-#define CDR_DEBUG(M) M
+//#define CDR_DEBUG_MSG(M) libcdr::debugPrint M
+//#define CDR_DEBUG(M) M
+#define CDR_DEBUG_MSG(M)
+#define CDR_DEBUG(M)
 #else
 #define CDR_DEBUG_MSG(M)
 #define CDR_DEBUG(M)
