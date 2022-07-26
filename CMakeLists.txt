@@ -1,4 +1,7 @@
+__cc_find(zlib)
+__cc_find(boost)
 __assert_target(zlib)
+
 if(NOT BOOST_INCLUDE_DIRS)
 	message(FATAL_ERROR "Please Specify BOOST_INCLUDE_DIRS")
 endif()
