@@ -1,12 +1,27 @@
-cmake_minimum_required(VERSION 3.1)
+__assert_target(zlib)
+if(NOT BOOST_INCLUDE_DIRS)
+	message(FATAL_ERROR "Please Specify BOOST_INCLUDE_DIRS")
+endif()
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
-include(ConfigureAllModules) 
+__files_group(${CMAKE_CURRENT_SOURCE_DIR}/librevenge/ SRCS)
+__files_group(${CMAKE_CURRENT_SOURCE_DIR}/libcdr/ CDRSRCS)
+__files_group(${CMAKE_CURRENT_SOURCE_DIR}/include/ INCSRCS)
 
-project(librevenge)
+set(LIBS zlib)
+set(DEFS _CRT_SECURE_NO_WARNINGS Z_PREFIX)
+if(WIN32)
+	list(APPEND DEFS DLL_EXPORT LIBCDR_BUILD LIBREVENGE_BUILD LIBREVENGE_STREAM_BUILD LIBREVENGE_GENERATORS_BUILD)
+else()
+	list(APPEND DEFS LIBCDR_VISIBILITY LIBREVENGE_VISIBILITY LIBREVENGE_STREAM_VISIBILITY LIBREVENGE_GENERATORS_VISIBILITY)
+endif()
 
-__required_find_package(boost)
-add_subdirectory(zlib/external/ zlib)
-add_subdirectory(src)
+set(INCS ${CMAKE_CURRENT_SOURCE_DIR}/include/ 
+		 ${CMAKE_CURRENT_SOURCE_DIR}
+		 ${BOOST_INCLUDE_DIRS})
 
-__configure_all()
+__add_real_target(librevenge dll SOURCE ${SRCS} ${INCSRCS} ${CDRSRCS} INC ${INCS} LIB ${LIBS} DEF ${DEFS}
+			INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/)
+
+if(CC_INSTALL_LIBREVENGE)
+	INSTALL(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION include/librevenge/ FILES_MATCHING PATTERN "*.h")
+endif()
