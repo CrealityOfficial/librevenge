@@ -26,5 +26,5 @@ __add_real_target(librevenge dll SOURCE ${SRCS} ${INCSRCS} ${CDRSRCS} INC ${INCS
 			INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/)
 
 if(CC_INSTALL_LIBREVENGE)
-	INSTALL(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/ DESTINATION include/librevenge/ FILES_MATCHING PATTERN "*.h")
+	__install_directory_specif(${CMAKE_CURRENT_SOURCE_DIR}/include/ librevenge)
 endif()
